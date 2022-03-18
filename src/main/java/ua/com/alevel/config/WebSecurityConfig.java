@@ -12,8 +12,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
         http
                 .authorizeRequests()
-                .antMatchers("/open","/").permitAll()
-                .anyRequest().authenticated()
+                //.antMatchers("/open","/").permitAll()   // Открытые страницы
+                //.anyRequest().authenticated()           // Все остальные требуют входа
+                .anyRequest().permitAll()                 // Открываем все страницы без входа
                 .and()
                 .formLogin()
                 .and()
