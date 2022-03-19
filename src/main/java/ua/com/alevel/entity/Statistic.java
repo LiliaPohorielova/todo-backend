@@ -4,16 +4,14 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.Hibernate;
 
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.util.Objects;
 
 @Entity
 @Setter
 @NoArgsConstructor
-public class Stat {
+@Table(name = "stat")
+public class Statistic {
 
     private Long id;
     private Long completedTotal;
@@ -41,7 +39,7 @@ public class Stat {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
-        Stat stat = (Stat) o;
+        Statistic stat = (Statistic) o;
         return getId() != null && Objects.equals(getId(), stat.getId());
     }
 
