@@ -3,6 +3,7 @@ package ua.com.alevel.controller.task;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.jpa.JpaObjectRetrievalFailureException;
 import org.springframework.web.bind.annotation.*;
 import ua.com.alevel.entity.Category;
 import ua.com.alevel.entity.Priority;
@@ -69,19 +70,21 @@ public class TaskController {
 
         Priority priority = null;
         try {
-            priority = priorityRepository.findById(task.getPriority().getId()).get();
+            if (task.getPriority() != null)
+                priority = priorityRepository.findById(task.getPriority().getId()).get();
         } catch (NoSuchElementException e) {
             return new ResponseEntity("Priority with id=" + task.getPriority().getId() + " not found", HttpStatus.NOT_ACCEPTABLE);
         }
 
         Category category = null;
         try {
-            category = categoryRepository.findById(task.getCategory().getId()).get();
+            if (task.getCategory() != null)
+                category = categoryRepository.findById(task.getCategory().getId()).get();
         } catch (NoSuchElementException e) {
             return new ResponseEntity("Category with id=" + task.getCategory().getId() + " not found", HttpStatus.NOT_ACCEPTABLE);
         }
 
-            // Метод save() работает как на создание так и на обновление
+        // Метод save() работает как на создание так и на обновление
         return ResponseEntity.ok(taskRepository.save(task));
     }
 
