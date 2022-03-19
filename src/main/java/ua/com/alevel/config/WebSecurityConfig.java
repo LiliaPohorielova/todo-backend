@@ -18,7 +18,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .formLogin()
                 .and()
-                .httpBasic();
+                .httpBasic()
+                .and().csrf().disable(); // ОТКЛЮЧИТЬ ПОТОМ - ШТУКА ПОЗВОЛЯЕТ КИДАТЬ JSON, POST-методы выполнять
+                                         // БЕЗ АВТОРИЗАЦИИ
 
     }
 }
