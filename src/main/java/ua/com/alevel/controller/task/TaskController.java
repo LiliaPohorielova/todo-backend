@@ -1,9 +1,11 @@
 package ua.com.alevel.controller.task;
 
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.orm.jpa.JpaObjectRetrievalFailureException;
 import org.springframework.web.bind.annotation.*;
 import ua.com.alevel.entity.Category;
 import ua.com.alevel.entity.Priority;
@@ -16,6 +18,8 @@ import ua.com.alevel.util.ConsoleLoggerSQL;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+
+import static ua.com.alevel.util.SortAndPage.*;
 
 @RestController
 @RequestMapping("/task")
@@ -117,16 +121,36 @@ public class TaskController {
     // отправляем JSON и по нем будем искать
     // чтобы не перечислять все параметры для поиска через запятую
     @PostMapping("/search")
-    public ResponseEntity<List<Task>> searchTasks(@RequestBody TaskSearchValues taskSearchValues) {
+    public ResponseEntity<Page<Task>> searchTasks(@RequestBody TaskSearchValues taskSearchValues) {
         ConsoleLoggerSQL.logMethod("TaskRepository: searchTasks()");
         // если не найдется ничего - будут показаны все задачи
 
-        // Исключаем NullPointerException
-        String title = taskSearchValues.getTitle() != null ? taskSearchValues.getTitle() : null;
-        Integer completed = taskSearchValues.getCompleted() != null ? taskSearchValues.getCompleted() : null;
-        Long priorityId = taskSearchValues.getPriorityId() != null ? taskSearchValues.getPriorityId() : null;
-        Long categoryId = taskSearchValues.getCategoryId() != null ? taskSearchValues.getCategoryId() : null;
+        String title = taskSearchValues.getTitle();
+        Integer completed = taskSearchValues.getCompleted();
+        Long priorityId = taskSearchValues.getPriorityId();
+        Long categoryId = taskSearchValues.getCategoryId();
 
-        return ResponseEntity.ok(taskRepository.findByParams(title, completed, priorityId, categoryId));
+        String sortColumn = taskSearchValues.getSortColumn() != null ? taskSearchValues.getSortColumn() : DEFAULT_SORT_PARAM_VALUE;
+        String sortDirection = taskSearchValues.getSortDirection() != null ? taskSearchValues.getSortDirection() : DEFAULT_ORDER_PARAM_VALUE;
+
+        if (!checkSortingColumnIsPresent(TaskSearchValues.class, sortColumn))
+            return new ResponseEntity("Sorting column: " + sortColumn + " not found in searched class",
+                                        HttpStatus.NOT_ACCEPTABLE);
+
+        if (!isSortDirection(sortDirection))
+            return new ResponseEntity("Sort Direction can be only \"asc\" or \"desc\"",
+                    HttpStatus.NOT_ACCEPTABLE);
+
+        Sort.Direction direction = sortDirection.equals("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+
+        Sort sort = Sort.by(direction, sortColumn);
+
+        Integer pageNumber = taskSearchValues.getPageNumber() != null ? taskSearchValues.getPageNumber() : DEFAULT_PAGE_PARAM_VALUE;
+        Integer pageSize = taskSearchValues.getPageSize() != null ? taskSearchValues.getPageSize() : DEFAULT_SIZE_PARAM_VALUE;
+
+        PageRequest pageRequest = PageRequest.of(pageNumber, pageSize, sort);
+
+        Page<Task> result = taskRepository.findByParams(title, completed, priorityId, categoryId, pageRequest);
+        return ResponseEntity.ok(result);
     }
 }
