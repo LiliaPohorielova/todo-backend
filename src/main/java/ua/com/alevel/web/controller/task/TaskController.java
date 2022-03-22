@@ -1,4 +1,4 @@
-package ua.com.alevel.controller.task;
+package ua.com.alevel.web.controller.task;
 
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;

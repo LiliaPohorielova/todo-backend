@@ -1,4 +1,4 @@
-package ua.com.alevel.controller.priority;
+package ua.com.alevel.web.controller.priority;
 
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;

@@ -1,4 +1,4 @@
-package ua.com.alevel.controller.category;
+package ua.com.alevel.web.controller.category;
 
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
