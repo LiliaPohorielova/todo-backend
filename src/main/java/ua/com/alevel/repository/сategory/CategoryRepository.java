@@ -1,15 +1,15 @@
 package ua.com.alevel.repository.сategory;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import ua.com.alevel.entity.Category;
+import ua.com.alevel.repository.BaseRepository;
 
 import java.util.List;
 
 @Repository
-public interface CategoryRepository extends JpaRepository<Category, Long> {
+public interface CategoryRepository extends BaseRepository<Category> {
 
     // Поиск с помощью JPQL -> подключить ElasticSearch
     // Если title пустой - показываем все значения

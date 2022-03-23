@@ -1,79 +1,78 @@
 package ua.com.alevel.web.controller.category;
 
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ua.com.alevel.entity.Category;
-import ua.com.alevel.repository.сategory.CategoryRepository;
+import ua.com.alevel.exception.EntityNotFoundException;
+import ua.com.alevel.facade.category.CategoryFacade;
 import ua.com.alevel.search.CategorySearchValues;
 import ua.com.alevel.util.ConsoleLoggerSQL;
+import ua.com.alevel.web.dto.request.category.CategoryRequestDto;
+import ua.com.alevel.web.dto.response.category.CategoryResponseDto;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/category")
 public class CategoryController {
 
-    private final CategoryRepository categoryRepository;
+    private final CategoryFacade categoryFacade;
 
-    public CategoryController(CategoryRepository categoryRepository) {
-        this.categoryRepository = categoryRepository;
+    public CategoryController(CategoryFacade categoryFacade) {
+        this.categoryFacade = categoryFacade;
     }
 
     @GetMapping("/all")
-    public List<Category> findAll() {
-        //return categoryRepository.findAll();
+    public List<CategoryResponseDto> findAll() {
         ConsoleLoggerSQL.logMethod("CategoryRepository: findAll()");
-        return categoryRepository.findAllByOrderByTitleAsc();
+        //return categoryFacade.findAll();
+        return categoryFacade.findAllByOrderByTitleAsc();
     }
 
     @PostMapping("/add")
-    public ResponseEntity<Category> addCategory(@RequestBody Category category) {
+    public ResponseEntity<CategoryResponseDto> addCategory(@RequestBody CategoryRequestDto category) {
         ConsoleLoggerSQL.logMethod("CategoryRepository: addCategory()");
-
-        // Id нового объекта должен быть пустым
-        if (category.getId() != null && category.getId() != 0) {
-            return new ResponseEntity("ID of new category must be null", HttpStatus.NOT_ACCEPTABLE);
-        }
 
         // Название нового объекта не должно быть пустым
         if (category.getTitle() == null || category.getTitle().trim().length() == 0) {
             return new ResponseEntity("Category name must not be empty", HttpStatus.NOT_ACCEPTABLE);
         }
 
-        return ResponseEntity.ok(categoryRepository.save(category));
+        return ResponseEntity.ok(categoryFacade.create(category));
     }
 
-    @PutMapping("/edit")
-    public ResponseEntity<Category> editCategory(@RequestBody Category category) {
+    @PutMapping("/edit/{id}")
+    public ResponseEntity<CategoryResponseDto> editCategory(@PathVariable Long id, @RequestBody CategoryRequestDto categoryDTO) {
         ConsoleLoggerSQL.logMethod("CategoryRepository: editCategory()");
-
+        CategoryResponseDto category;
         // Id редактированного объекта НЕ должен быть пустым
-        if (category.getId() == null || category.getId() == 0) {
+        if (id == null || id == 0) {
             return new ResponseEntity("ID of edit category must not be null", HttpStatus.NOT_ACCEPTABLE);
         }
 
         // Название редактированного объекта не должно быть пустым
-        if (category.getTitle() == null || category.getTitle().trim().length() == 0) {
+        if (categoryDTO.getTitle() == null || categoryDTO.getTitle().trim().length() == 0) {
             return new ResponseEntity("Category name must not be empty", HttpStatus.NOT_ACCEPTABLE);
         }
 
-        // Метод save() работает как на создание так и на обновление
-        return ResponseEntity.ok(categoryRepository.save(category));
-    }
-
-    @GetMapping("/id/{id}")
-    public ResponseEntity<Category> findById(@PathVariable Long id) {
-        ConsoleLoggerSQL.logMethod("CategoryRepository: findById()");
-        Category category = null;
         try {
-            category = categoryRepository.findById(id).get();
-        } catch (NoSuchElementException e) {
+            category = categoryFacade.update(categoryDTO, id);
+        } catch (EntityNotFoundException e) {
             return new ResponseEntity("Category with id=" + id + " not found", HttpStatus.NOT_ACCEPTABLE);
         }
 
+        return ResponseEntity.ok(category);
+    }
+
+    @GetMapping("/id/{id}")
+    public ResponseEntity<CategoryResponseDto> findById(@PathVariable Long id) {
+        ConsoleLoggerSQL.logMethod("CategoryRepository: findById()");
+        CategoryResponseDto category;
+        try {
+            category = categoryFacade.findById(id);
+        } catch (EntityNotFoundException e) {
+            return new ResponseEntity("Category with id=" + id + " not found", HttpStatus.NOT_ACCEPTABLE);
+        }
         return ResponseEntity.ok(category);
     }
 
@@ -81,11 +80,10 @@ public class CategoryController {
     public ResponseEntity<String> deleteById(@PathVariable Long id) {
         ConsoleLoggerSQL.logMethod("CategoryRepository: deleteById()");
         try {
-            categoryRepository.deleteById(id);
-        } catch (EmptyResultDataAccessException e) {
+            categoryFacade.delete(id);
+        } catch (EntityNotFoundException e) {
             return new ResponseEntity<>("Category with id=" + id + " not found", HttpStatus.NOT_ACCEPTABLE);
         }
-
         return new ResponseEntity<>("Category with id=" + id + " was deleted", HttpStatus.OK);
     }
 
@@ -93,9 +91,9 @@ public class CategoryController {
     // отправляем JSON и по нем будем искать
     // чтобы не перечислять все параметры для поиска через запятую
     @PostMapping("/search")
-    public ResponseEntity<List<Category>> searchCategories(@RequestBody CategorySearchValues categorySearchValues) {
+    public ResponseEntity<List<CategoryResponseDto>> searchCategories(@RequestBody CategorySearchValues categorySearchValues) {
         ConsoleLoggerSQL.logMethod("CategoryRepository: searchCategories()");
         // если не найдется ничего - будут показаны все категории
-        return ResponseEntity.ok(categoryRepository.findByTitle(categorySearchValues.getTitle()));
+        return ResponseEntity.ok(categoryFacade.findByTitle(categorySearchValues.getTitle()));
     }
 }

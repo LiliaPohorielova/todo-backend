@@ -10,7 +10,7 @@ import java.util.Objects;
 @Entity
 @Setter
 @NoArgsConstructor
-public class Category {
+public class Category extends BaseEntity {
 
     private Long id;
     private String title;
