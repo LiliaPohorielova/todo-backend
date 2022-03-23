@@ -1,23 +1,22 @@
 package ua.com.alevel.web.controller.task;
 
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ua.com.alevel.entity.Category;
-import ua.com.alevel.entity.Priority;
 import ua.com.alevel.entity.Task;
-import ua.com.alevel.repository.priority.PriorityRepository;
-import ua.com.alevel.repository.task.TaskRepository;
-import ua.com.alevel.repository.сategory.CategoryRepository;
+import ua.com.alevel.exception.EntityNotFoundException;
+import ua.com.alevel.facade.category.CategoryFacade;
+import ua.com.alevel.facade.priority.PriorityFacade;
+import ua.com.alevel.facade.task.TaskFacade;
 import ua.com.alevel.search.TaskSearchValues;
 import ua.com.alevel.util.ConsoleLoggerSQL;
+import ua.com.alevel.web.dto.request.task.TaskRequestDto;
+import ua.com.alevel.web.dto.response.task.TaskResponseDto;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 import static ua.com.alevel.util.SortAndPage.*;
 
@@ -25,95 +24,92 @@ import static ua.com.alevel.util.SortAndPage.*;
 @RequestMapping("/task")
 public class TaskController {
 
-    private final TaskRepository taskRepository;
-    private final PriorityRepository priorityRepository;
-    private final CategoryRepository categoryRepository;
+    private final TaskFacade taskFacade;
+    private final PriorityFacade priorityFacade;
+    private final CategoryFacade categoryFacade;
 
-    public TaskController(TaskRepository taskRepository, PriorityRepository priorityRepository, CategoryRepository categoryRepository) {
-        this.taskRepository = taskRepository;
-        this.priorityRepository = priorityRepository;
-        this.categoryRepository = categoryRepository;
+    public TaskController(TaskFacade taskFacade, PriorityFacade priorityFacade, CategoryFacade categoryFacade) {
+        this.taskFacade = taskFacade;
+        this.priorityFacade = priorityFacade;
+        this.categoryFacade = categoryFacade;
     }
 
     @GetMapping("/all")
-    public List<Task> findAll() {
-        ConsoleLoggerSQL.logMethod("TaskRepository: findAll()");
-        return taskRepository.findAll();
+    public List<TaskResponseDto> findAll() {
+        ConsoleLoggerSQL.logMethod("TaskFacade: findAll()");
+        return taskFacade.findAll();
     }
 
     @PostMapping("/add")
-    public ResponseEntity<Task> addTask(@RequestBody Task task) {
-        ConsoleLoggerSQL.logMethod("TaskRepository: addTask()");
-
-        // Id нового объекта должен быть пустым
-        if (task.getId() != null && task.getId() != 0) {
-            return new ResponseEntity("ID of new task must be null", HttpStatus.NOT_ACCEPTABLE);
-        }
+    public ResponseEntity<TaskResponseDto> addTask(@RequestBody TaskRequestDto task) {
+        ConsoleLoggerSQL.logMethod("TaskFacade: addTask()");
 
         // Название нового объекта не должно быть пустым
         if (task.getTitle() == null || task.getTitle().trim().length() == 0) {
             return new ResponseEntity("Task name must not be empty", HttpStatus.NOT_ACCEPTABLE);
         }
 
-        return ResponseEntity.ok(taskRepository.save(task));
+        return ResponseEntity.ok(taskFacade.create(task));
     }
 
-    @PutMapping("/edit")
-    public ResponseEntity<Task> editTask(@RequestBody Task task) {
-        ConsoleLoggerSQL.logMethod("TaskRepository: editTask()");
+    @PutMapping("/edit/{id}")
+    public ResponseEntity<TaskResponseDto> editTask(@PathVariable Long id, @RequestBody TaskRequestDto taskDTO) {
+        ConsoleLoggerSQL.logMethod("TaskFacade: editTask()");
+        TaskResponseDto task;
 
         // Id редактированного объекта НЕ должен быть пустым
-        if (task.getId() == null || task.getId() == 0) {
+        if (id == null || id == 0) {
             return new ResponseEntity("ID of edit task must not be null", HttpStatus.NOT_ACCEPTABLE);
         }
 
         // Название редактированного объекта не должно быть пустым
-        if (task.getTitle() == null || task.getTitle().trim().length() == 0) {
+        if (taskDTO.getTitle() == null || taskDTO.getTitle().trim().length() == 0) {
             return new ResponseEntity("Task name must not be empty", HttpStatus.NOT_ACCEPTABLE);
         }
 
-        Priority priority = null;
         try {
-            if (task.getPriority() != null)
-                priority = priorityRepository.findById(task.getPriority().getId()).get();
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity("Priority with id=" + task.getPriority().getId() + " not found", HttpStatus.NOT_ACCEPTABLE);
+            if (taskDTO.getPriority() != null)
+                priorityFacade.findById(taskDTO.getPriority().getId());
+        } catch (EntityNotFoundException e) {
+            return new ResponseEntity("Priority with id=" + taskDTO.getPriority().getId() + " not found", HttpStatus.NOT_ACCEPTABLE);
         }
 
-        Category category = null;
         try {
-            if (task.getCategory() != null)
-                category = categoryRepository.findById(task.getCategory().getId()).get();
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity("Category with id=" + task.getCategory().getId() + " not found", HttpStatus.NOT_ACCEPTABLE);
+            if (taskDTO.getCategory() != null)
+                categoryFacade.findById(taskDTO.getCategory().getId());
+        } catch (EntityNotFoundException e) {
+            return new ResponseEntity("Category with id=" + taskDTO.getCategory().getId() + " not found", HttpStatus.NOT_ACCEPTABLE);
         }
 
-        // Метод save() работает как на создание так и на обновление
-        return ResponseEntity.ok(taskRepository.save(task));
-    }
-
-    @GetMapping("/id/{id}")
-    public ResponseEntity<Task> findById(@PathVariable Long id) {
-        ConsoleLoggerSQL.logMethod("TaskRepository: findById()");
-        Task task = null;
         try {
-            task = taskRepository.findById(id).get();
-        } catch (NoSuchElementException e) {
+            task = taskFacade.update(taskDTO, id);
+        } catch (EntityNotFoundException e) {
             return new ResponseEntity("Task with id=" + id + " not found", HttpStatus.NOT_ACCEPTABLE);
         }
 
         return ResponseEntity.ok(task);
     }
 
+    @GetMapping("/id/{id}")
+    public ResponseEntity<TaskResponseDto> findById(@PathVariable Long id) {
+        ConsoleLoggerSQL.logMethod("TaskFacade: findById()");
+        TaskResponseDto task;
+        try {
+            task = taskFacade.findById(id);
+        } catch (EntityNotFoundException e) {
+            return new ResponseEntity("Task with id=" + id + " not found", HttpStatus.NOT_ACCEPTABLE);
+        }
+        return ResponseEntity.ok(task);
+    }
+
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<String> deleteById(@PathVariable Long id) {
-        ConsoleLoggerSQL.logMethod("TaskRepository: deleteById()");
+        ConsoleLoggerSQL.logMethod("TaskFacade: deleteById()");
         try {
-            taskRepository.deleteById(id);
-        } catch (EmptyResultDataAccessException e) {
+            taskFacade.delete(id);
+        } catch (EntityNotFoundException e) {
             return new ResponseEntity<>("Task with id=" + id + " not found", HttpStatus.NOT_ACCEPTABLE);
         }
-
         return new ResponseEntity<>("Task with id=" + id + " was deleted", HttpStatus.OK);
     }
 
@@ -122,7 +118,7 @@ public class TaskController {
     // чтобы не перечислять все параметры для поиска через запятую
     @PostMapping("/search")
     public ResponseEntity<Page<Task>> searchTasks(@RequestBody TaskSearchValues taskSearchValues) {
-        ConsoleLoggerSQL.logMethod("TaskRepository: searchTasks()");
+        ConsoleLoggerSQL.logMethod("TaskFacade: searchTasks()");
         // если не найдется ничего - будут показаны все задачи
 
         String title = taskSearchValues.getTitle();
@@ -150,7 +146,7 @@ public class TaskController {
 
         PageRequest pageRequest = PageRequest.of(pageNumber, pageSize, sort);
 
-        Page<Task> result = taskRepository.findByParams(title, completed, priorityId, categoryId, pageRequest);
+        Page<Task> result = taskFacade.findByParams(title, completed, priorityId, categoryId, pageRequest);
         return ResponseEntity.ok(result);
     }
 }

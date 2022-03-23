@@ -10,7 +10,7 @@ import java.util.Objects;
 @Entity
 @Setter
 @NoArgsConstructor
-public class Task {
+public class Task extends BaseEntity {
 
     private Long id;
     private String title;

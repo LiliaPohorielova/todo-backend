@@ -2,14 +2,14 @@ package ua.com.alevel.repository.task;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import ua.com.alevel.entity.Task;
+import ua.com.alevel.repository.BaseRepository;
 
 @Repository
-public interface TaskRepository extends JpaRepository<Task, Long> {
+public interface TaskRepository extends BaseRepository<Task> {
 
     @Query( "SELECT t FROM Task t WHERE " +
             "(:title is null or :title='' or lower(t.title) like lower(concat('%',:title,'%'))) AND " +
