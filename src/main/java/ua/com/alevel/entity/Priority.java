@@ -10,7 +10,7 @@ import java.util.Objects;
 @Entity
 @Setter
 @NoArgsConstructor
-public class Priority {
+public class Priority extends BaseEntity {
 
     private Long id;
     private String title;

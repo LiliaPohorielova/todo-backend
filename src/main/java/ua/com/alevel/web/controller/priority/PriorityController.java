@@ -1,16 +1,16 @@
 package ua.com.alevel.web.controller.priority;
 
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ua.com.alevel.entity.Priority;
-import ua.com.alevel.repository.priority.PriorityRepository;
+import ua.com.alevel.exception.EntityNotFoundException;
+import ua.com.alevel.facade.priority.PriorityFacade;
 import ua.com.alevel.search.PrioritySearchValues;
 import ua.com.alevel.util.ConsoleLoggerSQL;
+import ua.com.alevel.web.dto.request.priority.PriorityRequestDto;
+import ua.com.alevel.web.dto.response.priority.PriorityResponseDto;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/priority")
@@ -18,26 +18,21 @@ public class PriorityController {
 
     // Контроллеры напрямую с репозиториями не работают
     // Внедряем ссылку на объект (Dep Inj PriorityRepository)
-    private final PriorityRepository priorityRepository;
+    private final PriorityFacade priorityFacade;
 
-    public PriorityController(PriorityRepository priorityRepository) {
-        this.priorityRepository = priorityRepository;
+    public PriorityController(PriorityFacade priorityRepository) {
+        this.priorityFacade = priorityRepository;
     }
 
     @GetMapping("/all")
-    public List<Priority> findAll() {
+    public List<PriorityResponseDto> findAll() {
         ConsoleLoggerSQL.logMethod("PriorityRepository: findAll()");
-        // return priorityRepository.findAll();
-        return priorityRepository.findAllByOrderByIdAsc();
+        return priorityFacade.findAll();
     }
 
     @PostMapping("/add")
-    public ResponseEntity<Priority> addPriority(@RequestBody Priority priority) {
+    public ResponseEntity<PriorityResponseDto> addPriority(@RequestBody PriorityRequestDto priority) {
         ConsoleLoggerSQL.logMethod("PriorityRepository: addPriority()");
-        // Id нового объекта должен быть пустым
-        if (priority.getId() != null && priority.getId() != 0) {
-            return new ResponseEntity("ID of new priority must be null", HttpStatus.NOT_ACCEPTABLE);
-        }
 
         // Название нового объекта не должно быть пустым
         if (priority.getTitle() == null || priority.getTitle().trim().length() == 0) {
@@ -49,38 +44,45 @@ public class PriorityController {
             return new ResponseEntity("Priority color must not be empty", HttpStatus.NOT_ACCEPTABLE);
         }
 
-        return ResponseEntity.ok(priorityRepository.save(priority));
+        return ResponseEntity.ok(priorityFacade.create(priority));
     }
 
-    @PutMapping("/edit")
-    public ResponseEntity<Priority> editPriority(@RequestBody Priority priority) {
+    @PutMapping("/edit/{id}")
+    public ResponseEntity<PriorityResponseDto> editPriority(@PathVariable Long id, @RequestBody PriorityRequestDto priorityDTO) {
         ConsoleLoggerSQL.logMethod("PriorityRepository: editPriority()");
+        PriorityResponseDto priority;
         // Id редактированного объекта НЕ должен быть пустым
-        if (priority.getId() == null || priority.getId() == 0) {
+        if (id == null || id == 0) {
             return new ResponseEntity("ID of edit priority must not be null", HttpStatus.NOT_ACCEPTABLE);
         }
 
         // Название редактированного объекта не должно быть пустым
-        if (priority.getTitle() == null || priority.getTitle().trim().length() == 0) {
+        if (priorityDTO.getTitle() == null || priorityDTO.getTitle().trim().length() == 0) {
             return new ResponseEntity("Priority name must not be empty", HttpStatus.NOT_ACCEPTABLE);
         }
 
         // Цвет редактированного объекта не должно быть пустым
-        if (priority.getColor() == null || priority.getColor().trim().length() == 0) {
+        if (priorityDTO.getColor() == null || priorityDTO.getColor().trim().length() == 0) {
             return new ResponseEntity("Priority color must not be empty", HttpStatus.NOT_ACCEPTABLE);
         }
 
+        try {
+            priority = priorityFacade.update(priorityDTO, id);
+        } catch (EntityNotFoundException e) {
+            return new ResponseEntity("Priority with id=" + id + " not found", HttpStatus.NOT_ACCEPTABLE);
+        }
+
         // Метод save() работает как на создание так и на обновление
-        return ResponseEntity.ok(priorityRepository.save(priority));
+        return ResponseEntity.ok(priority);
     }
 
     @GetMapping("/id/{id}")
-    public ResponseEntity<Priority> findById(@PathVariable Long id) {
+    public ResponseEntity<PriorityResponseDto> findById(@PathVariable Long id) {
         ConsoleLoggerSQL.logMethod("PriorityRepository: findById()");
-        Priority priority = null;
+        PriorityResponseDto priority;
         try {
-            priority = priorityRepository.findById(id).get();
-        } catch (NoSuchElementException e) {
+            priority = priorityFacade.findById(id);
+        } catch (EntityNotFoundException e) {
             return new ResponseEntity("Priority with id=" + id + " not found", HttpStatus.NOT_ACCEPTABLE);
         }
 
@@ -91,8 +93,8 @@ public class PriorityController {
     public ResponseEntity<String> deleteById(@PathVariable Long id) {
         ConsoleLoggerSQL.logMethod("PriorityRepository: deleteById()");
         try {
-            priorityRepository.deleteById(id);
-        } catch (EmptyResultDataAccessException e) {
+            priorityFacade.delete(id);
+        } catch (EntityNotFoundException e) {
             return new ResponseEntity<>("Priority with id=" + id + " not found", HttpStatus.NOT_ACCEPTABLE);
         }
 
@@ -103,9 +105,9 @@ public class PriorityController {
     // отправляем JSON и по нем будем искать
     // чтобы не перечислять все параметры для поиска через запятую
     @PostMapping("/search")
-    public ResponseEntity<List<Priority>> searchPriorities(@RequestBody PrioritySearchValues prioritySearchValues) {
+    public ResponseEntity<List<PriorityResponseDto>> searchPriorities(@RequestBody PrioritySearchValues prioritySearchValues) {
         ConsoleLoggerSQL.logMethod("PriorityRepository: searchPriorities()");
         // если не найдется ничего - будут показаны все категории
-        return ResponseEntity.ok(priorityRepository.findByTitle(prioritySearchValues.getTitle()));
+        return ResponseEntity.ok(priorityFacade.findByTitle(prioritySearchValues.getTitle()));
     }
 }
