@@ -22,6 +22,7 @@ import static ua.com.alevel.util.SortAndPage.*;
 
 @RestController
 @RequestMapping("/task")
+@CrossOrigin(origins = "http://localhost:4200")
 public class TaskController {
 
     private final TaskFacade taskFacade;

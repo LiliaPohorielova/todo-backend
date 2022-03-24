@@ -14,6 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/priority")
+@CrossOrigin(origins = "http://localhost:4200")
 public class PriorityController {
 
     // Контроллеры напрямую с репозиториями не работают
