@@ -11,14 +11,16 @@ import ua.com.alevel.repository.BaseRepository;
 @Repository
 public interface TaskRepository extends BaseRepository<Task> {
 
-    @Query( "SELECT t FROM Task t WHERE " +
-            "(:title is null or :title='' or lower(t.title) like lower(concat('%',:title,'%'))) AND " +
-            "(:completed is null or t.completed=:completed)  AND " +
-            "(:priorityId is null or t.priority.id=:priorityId)  AND " +
-            "(:categoryId is null or t.category.id=:categoryId)")
+    @Query("SELECT p FROM Task p where " +
+            "(:title is null or :title='' or lower(p.title) like lower(concat('%', :title,'%'))) and" +
+            "(:completed is null or p.completed=:completed) and " +
+            "(:priorityId is null or p.priority.id=:priorityId) and " +
+            "(:categoryId is null or p.category.id=:categoryId)"
+    )
     Page<Task> findByParams(@Param("title") String title,
                             @Param("completed") Integer completed,
                             @Param("priorityId") Long priorityId,
                             @Param("categoryId") Long categoryId,
-                            Pageable pageable);
+                            Pageable pageable
+    );
 }

@@ -91,15 +91,15 @@ public class PriorityController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<String> deleteById(@PathVariable Long id) {
+    public ResponseEntity deleteById(@PathVariable Long id) {
         ConsoleLoggerSQL.logMethod("PriorityRepository: deleteById()");
         try {
             priorityFacade.delete(id);
         } catch (EntityNotFoundException e) {
-            return new ResponseEntity<>("Priority with id=" + id + " not found", HttpStatus.NOT_ACCEPTABLE);
+            return new ResponseEntity("Priority with id=" + id + " not found", HttpStatus.NOT_ACCEPTABLE);
         }
 
-        return new ResponseEntity<>("Priority with id=" + id + " was deleted", HttpStatus.OK);
+        return new ResponseEntity(HttpStatus.OK);
     }
 
     // поиск по любым параметрам

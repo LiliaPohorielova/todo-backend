@@ -71,7 +71,7 @@ public class CategoryFacadeImpl implements CategoryFacade {
 
     @Override
     public List<CategoryResponseDto> findAllByOrderByTitleAsc() {
-        List<Category> all = categoryService.findAll();
+        List<Category> all = categoryService.findAllByOrderByTitleAsc();
         return all.stream().map(CategoryResponseDto::new).collect(Collectors.toList());
     }
 }

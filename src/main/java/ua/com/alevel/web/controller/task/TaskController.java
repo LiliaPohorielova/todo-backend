@@ -104,14 +104,14 @@ public class TaskController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<String> deleteById(@PathVariable Long id) {
+    public ResponseEntity deleteById(@PathVariable Long id) {
         ConsoleLoggerSQL.logMethod("TaskFacade: deleteById()");
         try {
             taskFacade.delete(id);
         } catch (EntityNotFoundException e) {
-            return new ResponseEntity<>("Task with id=" + id + " not found", HttpStatus.NOT_ACCEPTABLE);
+            return new ResponseEntity("Task with id=" + id + " not found", HttpStatus.NOT_ACCEPTABLE);
         }
-        return new ResponseEntity<>("Task with id=" + id + " was deleted", HttpStatus.OK);
+        return new ResponseEntity(HttpStatus.OK); // просто отправляем статус 200 (операция прошла успешно)
     }
 
     // поиск по любым параметрам
@@ -130,8 +130,11 @@ public class TaskController {
         String sortColumn = taskSearchValues.getSortColumn() != null ? taskSearchValues.getSortColumn() : DEFAULT_SORT_PARAM_VALUE;
         String sortDirection = taskSearchValues.getSortDirection() != null ? taskSearchValues.getSortDirection() : DEFAULT_ORDER_PARAM_VALUE;
 
-        if (!checkSortingColumnIsPresent(TaskSearchValues.class, sortColumn))
-            return new ResponseEntity("Sorting column: " + sortColumn + " not found in searched class",
+        List<String> fields = getFields(Task.class);
+
+        if (!checkSortingColumnIsPresent(Task.class, sortColumn))
+            return new ResponseEntity("Sorting column: " + sortColumn + " not found in searched class: " + Task.class.getName() + "\n"
+                    + fields,
                                         HttpStatus.NOT_ACCEPTABLE);
 
         if (!isSortDirection(sortDirection))

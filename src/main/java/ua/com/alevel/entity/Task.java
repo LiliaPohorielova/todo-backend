@@ -1,30 +1,33 @@
 package ua.com.alevel.entity;
 
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
 import java.util.Date;
-import java.util.Objects;
 
 @Entity
-@Setter
 @NoArgsConstructor
+@Setter
+@EqualsAndHashCode
 public class Task extends BaseEntity {
-
     private Long id;
     private String title;
-    private Integer completed;
+    private Integer completed; // 1 = true, 0 = false
     private Date date;
     private Priority priority;
     private Category category;
 
-    @Id
+    // указываем, что поле заполняется в БД
+    // нужно, когда добавляем новый объект и он возвращается уже с новым id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
     @Column(name = "id")
     public Long getId() {
         return id;
     }
+
 
     @Basic
     @Column(name = "title")
@@ -32,11 +35,13 @@ public class Task extends BaseEntity {
         return title;
     }
 
+
     @Basic
     @Column(name = "completed")
     public Integer getCompleted() {
         return completed;
-    }
+    } // 1 = true, 0 = false
+
 
     @Basic
     @Column(name = "date")
@@ -44,29 +49,19 @@ public class Task extends BaseEntity {
         return date;
     }
 
+    // ссылка на объект Priority
+    // одна задача имеет ссылку на один объект
     @ManyToOne
-    @JoinColumn(name = "priority_id", referencedColumnName = "id")
+    @JoinColumn(name = "priority_id", referencedColumnName = "id") // по каким полям связывать (foreign key)
     public Priority getPriority() {
         return priority;
     }
 
-
+    // ссылка на объект Category
+    // одна задача имеет ссылку на один объект
     @ManyToOne
-    @JoinColumn(name = "category_id", referencedColumnName = "id")
+    @JoinColumn(name = "category_id", referencedColumnName = "id") // по каким полям связывать (foreign key)
     public Category getCategory() {
         return category;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Task task = (Task) o;
-        return Objects.equals(id, task.id) && Objects.equals(title, task.title) && Objects.equals(completed, task.completed) && Objects.equals(date, task.date);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, title, completed, date);
     }
 }

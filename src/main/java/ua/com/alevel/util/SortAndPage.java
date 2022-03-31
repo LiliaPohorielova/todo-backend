@@ -1,6 +1,10 @@
 package ua.com.alevel.util;
 
+import ua.com.alevel.entity.Task;
+
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 public class SortAndPage {
@@ -23,5 +27,13 @@ public class SortAndPage {
                 return true;
 
         return false;
+    }
+
+    public static List<String> getFields(Class<?> sortingValuesClass) {
+        List<String> arr = new ArrayList<>();
+        Field[] fields = Task.class.getDeclaredFields();
+        for (Field field : fields)
+            arr.add(field.getName());
+        return arr;
     }
 }

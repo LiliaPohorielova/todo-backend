@@ -1,11 +1,14 @@
 package ua.com.alevel.web.controller.category;
 
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ua.com.alevel.entity.Category;
 import ua.com.alevel.exception.EntityNotFoundException;
 import ua.com.alevel.facade.category.CategoryFacade;
 import ua.com.alevel.search.CategorySearchValues;
+import ua.com.alevel.service.category.CategoryService;
 import ua.com.alevel.util.ConsoleLoggerSQL;
 import ua.com.alevel.web.dto.request.category.CategoryRequestDto;
 import ua.com.alevel.web.dto.response.category.CategoryResponseDto;
@@ -18,9 +21,11 @@ import java.util.List;
 public class CategoryController {
 
     private final CategoryFacade categoryFacade;
+    private final CategoryService categoryService;
 
-    public CategoryController(CategoryFacade categoryFacade) {
+    public CategoryController(CategoryFacade categoryFacade, CategoryService categoryService) {
         this.categoryFacade = categoryFacade;
+        this.categoryService = categoryService;
     }
 
     @GetMapping("/all")
@@ -78,23 +83,25 @@ public class CategoryController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<String> deleteById(@PathVariable Long id) {
+    public ResponseEntity deleteById(@PathVariable Long id) {
         ConsoleLoggerSQL.logMethod("CategoryRepository: deleteById()");
         try {
-            categoryFacade.delete(id);
-        } catch (EntityNotFoundException e) {
-            return new ResponseEntity<>("Category with id=" + id + " not found", HttpStatus.NOT_ACCEPTABLE);
+            categoryService.delete(id);
+        } catch (EmptyResultDataAccessException e) {
+            e.printStackTrace();
+            return new ResponseEntity("Category with id = " + id + " not found", HttpStatus.NOT_ACCEPTABLE);
         }
-        return new ResponseEntity<>("Category with id=" + id + " was deleted", HttpStatus.OK);
+        return new ResponseEntity(HttpStatus.OK); // просто отправляем статус 200 (операция прошла успешно)
     }
 
     // поиск по любым параметрам
     // отправляем JSON и по нем будем искать
     // чтобы не перечислять все параметры для поиска через запятую
     @PostMapping("/search")
-    public ResponseEntity<List<CategoryResponseDto>> searchCategories(@RequestBody CategorySearchValues categorySearchValues) {
+    public ResponseEntity<List<Category>> searchCategories(@RequestBody CategorySearchValues categorySearchValues) {
         ConsoleLoggerSQL.logMethod("CategoryRepository: searchCategories()");
         // если не найдется ничего - будут показаны все категории
-        return ResponseEntity.ok(categoryFacade.findByTitle(categorySearchValues.getTitle()));
+        //return ResponseEntity.ok(categoryFacade.findByTitle(categorySearchValues.getTitle()));
+        return ResponseEntity.ok(categoryService.findByTitle(categorySearchValues.getTitle()));
     }
 }
