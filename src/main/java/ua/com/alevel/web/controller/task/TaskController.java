@@ -122,6 +122,8 @@ public class TaskController {
         ConsoleLoggerSQL.logMethod("TaskFacade: searchTasks()");
         // если не найдется ничего - будут показаны все задачи
 
+        // imitateLoading();
+
         String title = taskSearchValues.getTitle();
         Integer completed = taskSearchValues.getCompleted();
         Long priorityId = taskSearchValues.getPriorityId();
@@ -153,4 +155,12 @@ public class TaskController {
         Page<Task> result = taskFacade.findByParams(title, completed, priorityId, categoryId, pageRequest);
         return ResponseEntity.ok(result);
     }
+
+//    private void imitateLoading() {
+//        try {
+//            Thread.sleep(700);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//    }
 }
